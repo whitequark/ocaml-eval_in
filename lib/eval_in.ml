@@ -11,7 +11,6 @@ let replace ~sub ~by str =
   replace_one str
 
 let evaluate ~lang ~code =
-  Lwt_io.eprintl code >>= fun () ->
   (* Common eval.in parameters *)
   let base_uri = Uri.of_string "https://eval.in/" in
   let headers  = Cohttp.Header.init () in
