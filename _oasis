@@ -1,0 +1,14 @@
+OASISFormat: 0.4
+Name:        eval_in
+Version:     1.0
+Synopsis:    An IRC bot that submits requests to http://eval.in
+Authors:     Peter Zotov <whitequark@whitequark.org>
+License:     MIT
+Plugins:     META (0.4), DevFiles (0.4)
+BuildTools:  ocamlbuild
+
+Executable eval_in
+  Path:           lib
+  MainIs:         eval_in.ml
+  BuildDepends:   extlib, cmdliner, irc-client.lwt, uri, cohttp.lwt, yojson, re.perl
+  CompiledObject: best
