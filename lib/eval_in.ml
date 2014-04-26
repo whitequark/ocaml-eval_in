@@ -53,13 +53,13 @@ let callback ~lang ~connection ~result =
       catch
         (fun () ->
           evaluate ~lang ~code >>= fun result ->
-          Irc_client_lwt.Client.send_privmsg ~connection ~target:channel
-                                             ~message:(nick ^ ": " ^ result))
+          Irc_client_lwt.Client.send_notice ~connection ~target:channel
+                                            ~message:(nick ^ ": " ^ result))
         (fun exn ->
           Lwt_io.eprintl (Printexc.to_string exn) >>= fun () ->
           Lwt_io.eprintl (Printexc.get_backtrace ()) >>= fun () ->
-          Irc_client_lwt.Client.send_privmsg ~connection ~target:channel
-                                             ~message:(nick ^ ": sorry, I broke -_-'"))
+          Irc_client_lwt.Client.send_notice ~connection ~target:channel
+                                            ~message:(nick ^ ": sorry, I broke -_-'"))
     else
       return_unit
   | _ ->
