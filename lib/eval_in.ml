@@ -65,8 +65,10 @@ let callback ~lang ~connection ~result =
   | _ ->
     return_unit
 
-let main server port realname username password nick channels lang =
+let main server port realname username password nick channels lang daemonize =
   Lwt_main.run (
+    if daemonize then
+      Lwt_daemon.daemonize ();
     Irc_client_lwt.Client.connect_by_name ~server ~port ~username ~mode:0
                            ~realname ~nick ?password () >>=
     fun result ->
@@ -112,8 +114,13 @@ let language =
   Arg.(value & opt string "ocaml/ocaml-4.00.1" & info ["l"; "language"] ~docv:"LANG"
           ~doc:"Language to evaluate in")
 
+let daemonize =
+  Arg.(value & flag & info ["d"; "daemon"]
+          ~doc:"Daemonize")
+
 let eval_in_t = Term.(pure main $ server $ port $ realname $ username
-                                $ password $ nickname $ channels $ language)
+                                $ password $ nickname $ channels $ language
+                                $ daemonize)
 
 let info =
   let doc = "execute code snippets from IRC on http://eval.in" in
