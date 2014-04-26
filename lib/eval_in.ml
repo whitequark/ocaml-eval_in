@@ -1,30 +1,42 @@
 open Lwt
 open ExtString
 
+let result_re = Re_perl.compile_pat "^(File \"(.+?)\", .+?:\n)?(.{0,200})"
+
+let replace ~sub ~by str =
+  let rec replace_one str =
+    let more, str = String.replace ~sub ~by ~str in
+    if more then replace_one str else str
+  in
+  replace_one str
+
 let evaluate ~lang ~code =
+  Lwt_io.eprintl code >>= fun () ->
   (* Common eval.in parameters *)
   let base_uri = Uri.of_string "https://eval.in/" in
   let headers  = Cohttp.Header.init () in
   let headers  = Cohttp.Header.add headers "user-agent" "ocaml-eval_in" in
   (* Request for evaluation *)
-  let params   = Cohttp.Header.init () in
-  let params   = Cohttp.Header.add params "lang"       lang in
-  let params   = Cohttp.Header.add params "code"       code in
-  let params   = Cohttp.Header.add params "execute"    "1" in
-  Cohttp_lwt_unix.Client.post_form ~params ~headers base_uri >>= fun (resp, _) ->
+  let headers' = Cohttp.Header.add headers "content-type" "application/x-www-form-urlencoded" in
+  (* https://github.com/mirage/ocaml-cohttp/issues/126 *)
+  let code'    = replace ~sub:";" ~by:"%3B" (Uri.pct_encode code) in
+  let body     = Printf.sprintf "code=%s&lang=%s&execute=1" code' lang in
+  let body     = Cohttp_lwt_body.of_string body in
+  Cohttp_lwt_unix.Client.post ~headers:headers' ~body base_uri >>= fun (resp, _) ->
   assert ((Cohttp.Response.status resp) = `Found);
   (* Request for JSON with info and output *)
-  let headers = Cohttp.Response.headers resp in
-  let loc     = Option.get (Cohttp.Header.get headers "location") in
-  let uri     = Uri.of_string loc in
-  let uri     = Uri.with_path base_uri ((Uri.path uri) ^ ".json") in
+  let headers  = Cohttp.Response.headers resp in
+  let loc      = Option.get (Cohttp.Header.get headers "location") in
+  let uri      = Uri.of_string loc in
+  let uri      = Uri.with_path base_uri ((Uri.path uri) ^ ".json") in
   Cohttp_lwt_unix.Client.get uri >>= fun (resp, body) ->
   assert ((Cohttp.Response.status resp) = `OK);
   Cohttp_lwt_body.to_string body >>= fun body ->
   (* Format response *)
-  let json    = Yojson.Basic.from_string body in
-  let output  = Yojson.Basic.Util.(json |> member "output" |> to_string) in
-  let result  = Re.(get (exec (Re_perl.compile_pat "^(File \"(.+?)\", )?(.{0,200})") output) 3) in
+  let json     = Yojson.Basic.from_string body in
+  let output   = Yojson.Basic.Util.(json |> member "output" |> to_string) in
+  let result   = Re.(get (exec result_re output) 3) in
+  let result   = replace ~sub:"\n" ~by:" " result in
   if String.length result = 200 then
     return (Printf.sprintf "%s... (%s)" result loc)
   else
@@ -42,12 +54,12 @@ let callback ~lang ~connection ~result =
         (fun () ->
           evaluate ~lang ~code >>= fun result ->
           Irc_client_lwt.Client.send_privmsg ~connection ~target:channel
-                                             ~message:(nick ^ ":`" ^ result))
+                                             ~message:(nick ^ ": " ^ result))
         (fun exn ->
           Lwt_io.eprintl (Printexc.to_string exn) >>= fun () ->
           Lwt_io.eprintl (Printexc.get_backtrace ()) >>= fun () ->
           Irc_client_lwt.Client.send_privmsg ~connection ~target:channel
-                                             ~message:(nick ^ ":`sorry,`I`broke`-_-'"))
+                                             ~message:(nick ^ ": sorry, I broke -_-'"))
     else
       return_unit
   | _ ->
