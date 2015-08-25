@@ -1,8 +1,9 @@
 # OASIS_START
-# DO NOT EDIT (digest: 7f9e7173976f772c3a94696e183a0cb1)
+# DO NOT EDIT (digest: ff84be665c38169dc7a436e54514af20)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
+true: annot, bin_annot
 <**/.svn>: -traverse
 <**/.svn>: not_hygienic
 ".bzr": -traverse
@@ -21,11 +22,11 @@
 <lib/eval_in.{native,byte}>: pkg_re.perl
 <lib/eval_in.{native,byte}>: pkg_uri
 <lib/eval_in.{native,byte}>: pkg_yojson
-<lib/*.ml{,i}>: pkg_cmdliner
-<lib/*.ml{,i}>: pkg_cohttp.lwt
-<lib/*.ml{,i}>: pkg_extlib
-<lib/*.ml{,i}>: pkg_irc-client.lwt
-<lib/*.ml{,i}>: pkg_re.perl
-<lib/*.ml{,i}>: pkg_uri
-<lib/*.ml{,i}>: pkg_yojson
+<lib/*.ml{,i,y}>: pkg_cmdliner
+<lib/*.ml{,i,y}>: pkg_cohttp.lwt
+<lib/*.ml{,i,y}>: pkg_extlib
+<lib/*.ml{,i,y}>: pkg_irc-client.lwt
+<lib/*.ml{,i,y}>: pkg_re.perl
+<lib/*.ml{,i,y}>: pkg_uri
+<lib/*.ml{,i,y}>: pkg_yojson
 # OASIS_STOP
